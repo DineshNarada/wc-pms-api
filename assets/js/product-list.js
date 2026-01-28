@@ -118,7 +118,10 @@ async function loadProducts(page = 1) {
             const price = parseFloat(product.price);
             const formattedPrice = isNaN(price) ? 'N/A' : price.toFixed(2);
             const stockClass = product.stock_status === 'instock' ? 'stock-instock' : 'stock-outofstock';
-            const stockText = product.stock_status === 'instock' ? '✓ In Stock' : '✗ Out of Stock';
+            const stockQuantity = product.stock_quantity || 0;
+            const stockText = product.stock_status === 'instock' 
+                ? `✓ In Stock (${stockQuantity} ${stockQuantity === 1 ? 'item' : 'items'})` 
+                : '✗ Out of Stock';
             const salePrice = product.sale_price ? `<span class="original">${parseFloat(product.regular_price).toFixed(2)}</span>` : '';
 
             html += `
