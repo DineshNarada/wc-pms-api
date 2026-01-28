@@ -1,8 +1,10 @@
 // script to fetch and display products with pagination to frontend/products.html
 
 const API_ENDPOINT = '../api/fetch-products.php';
+const INVENTORY_FRAGMENT_ENDPOINT = '../api/fetch-inventory-fragment.php';
 let currentPage = 1;
 let totalPages = 1;
+let inventoryRefreshInterval = null;
 
 /**
  * Escape HTML to prevent XSS
@@ -125,7 +127,7 @@ async function loadProducts(page = 1) {
             const salePrice = product.sale_price ? `<span class="original">${parseFloat(product.regular_price).toFixed(2)}</span>` : '';
 
             html += `
-                <div class="product-card">
+                <div class="product-card" data-product-id="${product.id}">
                     <img src="${product.featured_image}" alt="${escapeHtml(product.name)}" class="product-image" onclick="openLightbox('${product.featured_image}', '${escapeHtml(product.name)}')"
                         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23ddd%22 width=%22200%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22Arial%22 font-size=%2214%22 fill=%22%23999%22%3ENo Image%3C/text%3E%3C/svg%3E'">
                     <div class="product-info">
@@ -178,6 +180,9 @@ async function loadProducts(page = 1) {
 // Initialize products on page load
 document.addEventListener('DOMContentLoaded', () => {
     loadProducts(1);
+
+    // Start inventory refresh every 60 seconds
+    startInventoryRefresh(60000);
     
     // Setup lightbox close on background click
     const lightbox = document.getElementById('lightbox');
@@ -190,9 +195,69 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Close lightbox on Escape key
+/**
+ * Close lightbox on Escape key
+ */
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         closeLightbox();
     }
 });
+
+/**
+ * Update inventory for a single product without page refresh
+ * @param {number} productId 
+ * @param {HTMLElement} stockElement 
+ */
+async function updateProductInventory(productId, stockElement) {
+    try {
+        const response = await fetch(`${INVENTORY_FRAGMENT_ENDPOINT}?product_id=${productId}`);
+        const data = await response.json();
+
+        if (data.success && stockElement) {
+            stockElement.innerHTML = data.stock_html;
+        }
+    } catch (error) {
+        console.error('Inventory update error:', error);
+    }
+}
+
+/**
+ * Update all product inventories on the current page
+ */
+async function updateAllInventories() {
+    const productCards = document.querySelectorAll('[data-product-id]');
+    
+    productCards.forEach(card => {
+        const productId = card.getAttribute('data-product-id');
+        const stockSpan = card.querySelector('.product-stock');
+        if (productId && stockSpan) {
+            updateProductInventory(productId, stockSpan);
+        }
+    });
+}
+
+/**
+ * Start auto-refresh for inventory (checks every 30 seconds)
+ * @param {number} intervalMs - Interval in milliseconds (default: 30000ms = 30 seconds)
+ */
+function startInventoryRefresh(intervalMs = 30000) {
+    // Clear existing interval if any
+    if (inventoryRefreshInterval) {
+        clearInterval(inventoryRefreshInterval);
+    }
+    
+    inventoryRefreshInterval = setInterval(updateAllInventories, intervalMs);
+    console.log(`Inventory refresh started: every ${intervalMs / 1000} seconds`);
+}
+
+/**
+ * Stop auto-refresh for inventory
+ */
+function stopInventoryRefresh() {
+    if (inventoryRefreshInterval) {
+        clearInterval(inventoryRefreshInterval);
+        inventoryRefreshInterval = null;
+        console.log('Inventory refresh stopped');
+    }
+}
