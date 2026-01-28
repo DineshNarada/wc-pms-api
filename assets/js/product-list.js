@@ -16,6 +16,30 @@ function escapeHtml(text) {
 }
 
 /**
+ * Open lightbox modal to view image
+ * @param {string} imageUrl 
+ * @param {string} altText 
+ */
+function openLightbox(imageUrl, altText) {
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImage = document.getElementById('lightbox-image');
+    const lightboxAlt = document.getElementById('lightbox-alt');
+    
+    lightboxImage.src = imageUrl;
+    lightboxImage.alt = altText;
+    lightboxAlt.textContent = altText;
+    lightbox.style.display = 'flex';
+}
+
+/**
+ * Close lightbox modal
+ */
+function closeLightbox() {
+    const lightbox = document.getElementById('lightbox');
+    lightbox.style.display = 'none';
+}
+
+/**
  * Display a network error message in the content div
  * @param {Response} response 
  * @param {string} responseText 
@@ -99,7 +123,7 @@ async function loadProducts(page = 1) {
 
             html += `
                 <div class="product-card">
-                    <img src="${product.featured_image}" alt="${escapeHtml(product.name)}" class="product-image"
+                    <img src="${product.featured_image}" alt="${escapeHtml(product.name)}" class="product-image" onclick="openLightbox('${product.featured_image}', '${escapeHtml(product.name)}')"
                         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23ddd%22 width=%22200%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22Arial%22 font-size=%2214%22 fill=%22%23999%22%3ENo Image%3C/text%3E%3C/svg%3E'">
                     <div class="product-info">
                         <h3 class="product-name">${escapeHtml(product.name)}</h3>
@@ -151,4 +175,21 @@ async function loadProducts(page = 1) {
 // Initialize products on page load
 document.addEventListener('DOMContentLoaded', () => {
     loadProducts(1);
+    
+    // Setup lightbox close on background click
+    const lightbox = document.getElementById('lightbox');
+    if (lightbox) {
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) {
+                closeLightbox();
+            }
+        });
+    }
+});
+
+// Close lightbox on Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeLightbox();
+    }
 });
