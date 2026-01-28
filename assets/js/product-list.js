@@ -90,12 +90,12 @@ async function loadProducts(page = 1) {
 
         let html = '<div class="products-grid">';
 
-        data.products.forEach(product => {
+            data.products.forEach(product => {
             const price = parseFloat(product.price);
-            const formattedPrice = isNaN(price) ? 'N/A' : `$${price.toFixed(2)}`;
+            const formattedPrice = isNaN(price) ? 'N/A' : price.toFixed(2);
             const stockClass = product.stock_status === 'instock' ? 'stock-instock' : 'stock-outofstock';
             const stockText = product.stock_status === 'instock' ? '✓ In Stock' : '✗ Out of Stock';
-            const salePrice = product.sale_price ? `<span class="original">$${parseFloat(product.regular_price).toFixed(2)}</span>` : '';
+            const salePrice = product.sale_price ? `<span class="original">${parseFloat(product.regular_price).toFixed(2)}</span>` : '';
 
             html += `
                 <div class="product-card">
